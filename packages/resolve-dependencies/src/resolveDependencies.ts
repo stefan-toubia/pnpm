@@ -756,6 +756,10 @@ async function resolveDependency (
       workspacePackages: options.workspacePackages,
     })
   } catch (err: any) { // eslint-disable-line
+    console.log('!!!!!!!!!!>>>>>>>>>>>>>>', options.parentPkg.nodeId)
+    // TODO: improve the error that is thrown here by adding some context info to it
+    // for instance, when a 404 error happens, I want to know the chain of dependencies to the not found package
+    // an e2e test should be added
     if (wantedDependency.optional) {
       skippedOptionalDependencyLogger.debug({
         details: err.toString(),
