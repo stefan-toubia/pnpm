@@ -129,8 +129,22 @@ when running add/update with the --workspace option')
     opts.workspaceDir ? await findWorkspacePackages(opts.workspaceDir, opts) : []
   )
   if (opts.workspaceDir) {
-    const selectedProjectsGraph = opts.selectedProjectsGraph ?? selectProjectByDir(allProjects, opts.dir)
+    let selectedProjectsGraph = opts.selectedProjectsGraph ?? selectProjectByDir(allProjects, opts.dir)
     if (selectedProjectsGraph != null) {
+      const cmdFullName = opts.update ? 'update' : (params.length === 0 ? 'install' : 'add')
+
+      let allProjectsGraph = selectedProjectsGraph
+      if (!allProjectsGraph[opts.workspaceDir]) {
+        allProjectsGraph = {
+          ...allProjectsGraph,
+          ...selectProjectByDir(allProjects, opts.workspaceDir),
+        }
+      }
+
+      selectedProjectsGraph = cmdFullName === 'install' && !opts.sharedWorkspaceLockfile
+        ? allProjectsGraph
+        : selectedProjectsGraph
+
       const sequencedGraph = sequenceGraph(selectedProjectsGraph)
       // Check and warn if there are cyclic dependencies
       if (!sequencedGraph.safe) {
@@ -143,13 +157,6 @@ when running add/update with the --workspace option')
         })
       }
 
-      let allProjectsGraph = selectedProjectsGraph
-      if (!allProjectsGraph[opts.workspaceDir]) {
-        allProjectsGraph = {
-          ...allProjectsGraph,
-          ...selectProjectByDir(allProjects, opts.workspaceDir),
-        }
-      }
       await recursive(allProjects,
         params,
         {
@@ -160,7 +167,7 @@ when running add/update with the --workspace option')
           selectedProjectsGraph,
           workspaceDir: opts.workspaceDir,
         },
-        opts.update ? 'update' : (params.length === 0 ? 'install' : 'add')
+        cmdFullName
       )
       return
     }
